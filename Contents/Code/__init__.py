@@ -154,20 +154,26 @@ class StashPlexAgent(Agent.Movies):
         # Create and populate role with actor's name
         try:
             if "performers" in data:
+                api_string = ""
+                if Prefs['APIKey']:
+                    api_string = '&apikey=%s' % Prefs['APIKey']            
                 models=data["performers"]
                 for model in models:
                     role = metadata.roles.new()
                     role.name=model["name"]
-                    role.photo=model["image_path"]
+                    role.photo=model["image_path"] + api_string
         except:
             pass
 
         # Add posters and fan art.
         if not data["paths"]["screenshot"] is None:
+            api_string = ""
+            if Prefs['APIKey']:
+                api_string = '&apikey=%s' % Prefs['APIKey']            
             try:
-                thumb = HTTP.Request(data["paths"]["screenshot"])
-                metadata.posters[data["paths"]["screenshot"]] = Proxy.Preview(thumb)
-                metadata.art[data["paths"]["screenshot"]] = Proxy.Preview(thumb)
+                thumb = HTTP.Request(data["paths"]["screenshot"] + api_string)
+                metadata.posters[data["paths"]["screenshot"] + api_string] = Proxy.Preview(thumb)
+                metadata.art[data["paths"]["screenshot"] + api_string] = Proxy.Preview(thumb)
             except:
                 pass
             

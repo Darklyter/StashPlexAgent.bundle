@@ -1,19 +1,5 @@
 [
     {
-        "id": "Username",
-        "label": "The username to log into Stash server",
-        "type": "text",
-        "default": ""
-    },
-    {
-        "id": "Password",
-        "label": "The password for above username",
-        "type": "text",
-        "option": "hidden",
-        "default": "",
-        "secure": true
-    },
-    {
         "id": "Hostname",
         "label": "The host for Stash",
         "type": "text",
@@ -33,7 +19,7 @@
     },
     {
         "id": "APIKey",
-        "label": "The API Key for Stash",
+        "label": "The API Key for Stash if Authentication is enabled",
         "type": "text",
         "default": ""
     },
