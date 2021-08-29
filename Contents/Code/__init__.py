@@ -144,7 +144,7 @@ class StashPlexAgent(Agent.Movies):
             if "tags" in data:
                 genres = data["tags"]
                 for genre in genres:
-                    if not genre["id"] in ignore_tags:
+                    if not genre["id"] in ignore_tags and "ambiguous" not in genre["name"].lower():
                         metadata.genres.add(genre["name"])
         except:
             pass
