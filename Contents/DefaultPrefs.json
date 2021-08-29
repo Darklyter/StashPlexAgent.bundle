@@ -1,0 +1,58 @@
+[
+    {
+        "id": "Username",
+        "label": "The username to log into Stash server",
+        "type": "text",
+        "default": ""
+    },
+    {
+        "id": "Password",
+        "label": "The password for above username",
+        "type": "text",
+        "option": "hidden",
+        "default": "",
+        "secure": true
+    },
+    {
+        "id": "Hostname",
+        "label": "The host for Stash",
+        "type": "text",
+        "default": "127.0.0.1"
+    },
+    {
+        "id": "Port",
+        "label": "The port for Stash",
+        "type": "text",
+        "default": "9999"
+    },
+    {
+        "id": "UseHTTPS",
+        "label": "Use HTTPS instead of HTTP to connect",
+        "type": "bool",
+        "default": false
+    },
+    {
+        "id": "APIKey",
+        "label": "The API Key for Stash",
+        "type": "text",
+        "default": ""
+    },
+    {
+        "id": "IgnoreTags",
+        "label": "Stash Tag ID numbers to ignore (comma separated)",
+        "type": "text",
+        "default": "1,2,3318,6279"
+    },
+    {
+        "id": "CreateCollectionTags",
+        "label": "Auto create Plex Collection tags for Site and Studio",
+        "type": "bool",
+        "default": true
+    },    
+    {
+        "id": "debug",
+        "label": "Use debug logging",
+        "type": "bool",
+        "default": false
+    },
+]
