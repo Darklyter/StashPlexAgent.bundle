@@ -11,4 +11,4 @@ You can also set tag numbers to ignore on import, I've left mine in as an exampl
 
 For installing just download the bundle and put it into your "\PlexMediaServer\Plex Media Server\Plug-ins" folder.  (The entire bundle as a directory...  "\StashPlexAgent.bundle")
 
-I guarantee there will be problems, and I haven't tested the authentication mechanisms (since I don't use them).  If you have any problems feel free to get with me on either the TPDB or Stash Discord channels.
+I guarantee there will be problems.  When they pop up feel free to get with me on either the TPDB or Stash Discord channels.
