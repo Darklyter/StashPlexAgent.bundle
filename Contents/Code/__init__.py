@@ -56,7 +56,6 @@ class StashPlexAgent(Agent.Movies):
     languages = [Locale.Language.English]
     primary_provider = True
     accepts_from = [
-        'com.plexapp.agents.localmedia'
         'com.plexapp.agents.xbmcnfo'
     ]    
     
@@ -110,7 +109,7 @@ class StashPlexAgent(Agent.Movies):
         
         # Get the rating
         if not data["rating"] is None:
-            metadata.rating = float(data["rating"])
+            metadata.rating = float(data["rating"]) * 2
         
         # Set the summary
         if "details" in data:
