@@ -25,7 +25,7 @@
     },
     {
         "id": "IgnoreTags",
-        "label": "Stash Tag ID numbers to ignore (comma separated)",
+        "label": "Stash Tag ID numbers to ignore (comma separated, 0 to disable)",
         "type": "text",
         "default": "1,2,3318,6279"
     },
