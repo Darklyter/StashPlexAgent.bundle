@@ -4,14 +4,14 @@ import time
 import string
 import thread
 import threading
-import urllib
 import copy
 import json
 import dateutil.parser as dateparser
 from urllib2 import HTTPError
+from urllib2 import quote
 from datetime import datetime
 from lxml import etree
-
+    
 # preferences
 preference = Prefs
 DEBUG = preference['debug']
@@ -60,17 +60,17 @@ class StashPlexAgent(Agent.Movies):
     ]    
     
     def search(self, results, media, lang):
+        DEBUG = Prefs['debug']        
         file_query = r"""query{findScenes(scene_filter:{path:{value:"\"<FILENAME>\"",modifier:INCLUDES}}){scenes{id,title,date,studio{id,name}}}}"""
         mediaFile = media.items[0].parts[0].file
         filename = String.Unquote(mediaFile).encode('utf8', 'ignore')        
         filename = os.path.splitext(os.path.basename(filename))[0]
-        Log(filename)
         if filename:
-            # ~ filename = urllib.quote(filename)
-            filename = filename.replace(" ", "%20")
+            filename = str(quote(filename.encode('UTF-8')))
             query = file_query.replace("<FILENAME>", filename)
             request = HttpReq(query)
-            Log(request)
+            if DEBUG:
+                Log(request)
             movie_data = request['data']['findScenes']['scenes']
             score = 100 if len(movie_data) == 1 else 85 
             for scene in movie_data:
@@ -83,6 +83,7 @@ class StashPlexAgent(Agent.Movies):
 
 
     def update(self, metadata, media, lang, force=False):
+        DEBUG = Prefs['debug']        
         Log("update(%s)" % metadata.id)
         mid = metadata.id
         id_query = "query{findScene(id:%s){path,id,title,details,url,date,rating,paths{screenshot,stream}studio{id,name,image_path,parent_studio{id,name,details}}tags{id,name}performers{name,image_path}movies{movie{name}}}}"
@@ -169,6 +170,8 @@ class StashPlexAgent(Agent.Movies):
                     api_string = '&apikey=%s' % Prefs['APIKey']            
                 models=data["performers"]
                 for model in models:
+                    if DEBUG:
+                        Log("Pulling Model: " + model["name"] + " With Image: " + model["image_path"])
                     role = metadata.roles.new()
                     role.name=model["name"]
                     role.photo=model["image_path"] + api_string
