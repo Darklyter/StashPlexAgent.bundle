@@ -136,14 +136,14 @@ class StashPlexAgent(Agent.Movies):
                     metadata.collections.add(site)
                 except:
                     pass
-            if not data["studio"]["parent_studio"] is None:
-                site="Studio: " + data["studio"]["parent_studio"]["name"]
-            else:
-                site="Studio: " + data["studio"]["name"]
-            try:
-                metadata.collections.add(site)
-            except:
-                pass
+                if not data["studio"]["parent_studio"] is None:
+                    site="Studio: " + data["studio"]["parent_studio"]["name"]
+                else:
+                    site="Studio: " + data["studio"]["name"]
+                try:
+                    metadata.collections.add(site)
+                except:
+                    pass
             
         # Add the genres
         metadata.genres.clear()
@@ -151,7 +151,7 @@ class StashPlexAgent(Agent.Movies):
             ignore_tags = Prefs["IgnoreTags"].split(",")
             ignore_tags = list(map(lambda x: x.strip(), ignore_tags))
         try:
-            if "tags" in data:
+            if data["tags"]:
                 genres = data["tags"]
                 for genre in genres:
                     if not genre["id"] in ignore_tags and "ambiguous" not in genre["name"].lower():
@@ -163,7 +163,7 @@ class StashPlexAgent(Agent.Movies):
         metadata.roles.clear()
         # Create and populate role with actor's name
         try:
-            if "performers" in data:
+            if data["performers"]:
                 api_string = ""
                 if Prefs['APIKey']:
                     api_string = '&apikey=%s' % Prefs['APIKey']            
