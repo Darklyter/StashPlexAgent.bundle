@@ -74,7 +74,10 @@ class StashPlexAgent(Agent.Movies):
             movie_data = request['data']['findScenes']['scenes']
             score = 100 if len(movie_data) == 1 else 85 
             for scene in movie_data:
-                title = scene['title'] + ' - ' + scene['date']
+                if scene['date']:
+                    title = scene['title'] + ' - ' + scene['date']
+                else:
+                    title = scene['title']
                 Log("Title Found: " + title + " Score: " + str(score) + " ID:" + scene['id'])
                 results.Append(MetadataSearchResult(id = str(scene['id']), name = title, score = int(score), lang = lang))
 
