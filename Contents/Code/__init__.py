@@ -90,7 +90,7 @@ class StashPlexAgent(Agent.Movies):
         data = data['data']['findScene']
         metadata.collections.clear()
       
-        if "date" in data:
+        if data['date']:
             try:
                 Log("Trying to parse:" + data["date"])
                 date=dateparser().parse(data["date"])
@@ -104,7 +104,7 @@ class StashPlexAgent(Agent.Movies):
                 metadata.year = date.year
 
         # Get the title
-        if "title" in data:
+        if data['title']:
             metadata.title = data["title"]
 
         # Get the Studio
@@ -124,7 +124,7 @@ class StashPlexAgent(Agent.Movies):
                         pass                  
         
         # Set the summary
-        if "details" in data:
+        if data['details']:
             summary=data["details"].replace("\n"," ").replace("\r", "").replace("\t","")
             metadata.summary = summary
 
