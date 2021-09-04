@@ -85,6 +85,7 @@ class StashPlexAgent(Agent.Movies):
         id_query = "query{findScene(id:%s){path,id,title,details,url,date,rating,paths{screenshot,stream}studio{id,name,image_path,parent_studio{id,name,details}}tags{id,name}performers{name,image_path}movies{movie{name}}}}"
         data = HttpReq(id_query % mid)
         data = data['data']['findScene']
+        metadata.collections.clear()
       
         if "date" in data:
             try:
@@ -110,6 +111,14 @@ class StashPlexAgent(Agent.Movies):
         # Get the rating
         if not data["rating"] is None:
             metadata.rating = float(data["rating"]) * 2
+            if Prefs["CreateRatingTags"]:
+                if int(data["rating"]) > 0:
+                    rating = str(int(data["rating"]))
+                    ratingstring = "Rating: " + rating + " Stars"
+                    try:
+                        metadata.collections.add(ratingstring)
+                    except:
+                        pass                  
         
         # Set the summary
         if "details" in data:
@@ -118,7 +127,6 @@ class StashPlexAgent(Agent.Movies):
 
         # Set series and add to collections
         if Prefs["CreateCollectionTags"]:
-            metadata.collections.clear()
             if not data["studio"] is None:
                 site="Site: " + data["studio"]["name"]
                 try:

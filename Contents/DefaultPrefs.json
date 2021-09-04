@@ -36,6 +36,12 @@
         "default": true
     },    
     {
+        "id": "CreateRatingTags",
+        "label": "Auto create Plex Collection tags for Stash star rating",
+        "type": "bool",
+        "default": false
+    },    
+    {
         "id": "debug",
         "label": "Use debug logging",
         "type": "bool",
