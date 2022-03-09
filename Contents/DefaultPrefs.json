@@ -34,13 +34,25 @@
         "label": "Auto create Plex Collection tags for Site and Studio",
         "type": "bool",
         "default": true
-    },    
+    },
+    {
+        "id": "PrefixSiteCollectionTags",
+        "label": "Prefix for Site Collection Names (The Site name will be appended to this value)",
+        "type": "text",
+        "default": "Site: "
+    },
+    {
+        "id": "PrefixStudioCollectionTags",
+        "label": "Prefix for Studio Collection Names (The Studio name (if available) will be appended to this value)",
+        "type": "text",
+        "default": "Studio: "
+    },
     {
         "id": "CreateRatingTags",
         "label": "Auto create Plex Collection tags for Stash star rating",
         "type": "bool",
         "default": false
-    },    
+    },
     {
         "id": "debug",
         "label": "Use debug logging",

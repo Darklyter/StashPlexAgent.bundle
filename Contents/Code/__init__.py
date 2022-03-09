@@ -11,7 +11,7 @@ from urllib2 import HTTPError
 from urllib2 import quote
 from datetime import datetime
 from lxml import etree
-    
+
 # preferences
 preference = Prefs
 DEBUG = preference['debug']
@@ -27,7 +27,7 @@ def ValidatePrefs():
 def Start():
     Log("Stash metadata agent started")
     HTTP.Headers['Accept'] = 'application/json'
-    HTTP.CacheTime = 0.1 
+    HTTP.CacheTime = 0.1
     ValidatePrefs()
 
 
@@ -36,7 +36,7 @@ def HttpReq(url, authenticate=True, retry=True):
     api_string = ''
     if Prefs['APIKey']:
         api_string = '&apikey=%s' % Prefs['APIKey']
-        
+
     if Prefs['UseHTTPS']:
         connectstring = 'https://%s:%s/graphql?query=%s%s'
     else:
@@ -50,7 +50,7 @@ def HttpReq(url, authenticate=True, retry=True):
         if not retry:
             raise e
         return HttpReq(url, authenticate, False)
-        
+
 class StashPlexAgent(Agent.Movies):
     name = 'Stash Plex Agent'
     languages = [Locale.Language.English]
@@ -58,10 +58,10 @@ class StashPlexAgent(Agent.Movies):
     accepts_from = ['com.plexapp.agents.xbmcnfo', 'com.plexapp.agents.phoenixadult', 'com.plexapp.agents.data18-phoenix', 'com.plexapp.agents.adultdvdempire']
 
     def search(self, results, media, lang):
-        DEBUG = Prefs['debug']        
+        DEBUG = Prefs['debug']
         file_query = r"""query{findScenes(scene_filter:{path:{value:"\"<FILENAME>\"",modifier:INCLUDES}}){scenes{id,title,date,studio{id,name}}}}"""
         mediaFile = media.items[0].parts[0].file
-        filename = String.Unquote(mediaFile).encode('utf8', 'ignore')        
+        filename = String.Unquote(mediaFile).encode('utf8', 'ignore')
         filename = os.path.splitext(os.path.basename(filename))[0]
         if filename:
             filename = str(quote(filename.encode('UTF-8')))
@@ -70,7 +70,7 @@ class StashPlexAgent(Agent.Movies):
             if DEBUG:
                 Log(request)
             movie_data = request['data']['findScenes']['scenes']
-            score = 100 if len(movie_data) == 1 else 85 
+            score = 100 if len(movie_data) == 1 else 85
             for scene in movie_data:
                 if scene['date']:
                     title = scene['title'] + ' - ' + scene['date']
@@ -81,14 +81,14 @@ class StashPlexAgent(Agent.Movies):
 
 
     def update(self, metadata, media, lang, force=False):
-        DEBUG = Prefs['debug']        
+        DEBUG = Prefs['debug']
         Log("update(%s)" % metadata.id)
         mid = metadata.id
         id_query = "query{findScene(id:%s){path,id,title,details,url,date,rating,paths{screenshot,stream}studio{id,name,image_path,parent_studio{id,name,details}}tags{id,name}performers{name,image_path}movies{movie{name}}}}"
         data = HttpReq(id_query % mid)
         data = data['data']['findScene']
         metadata.collections.clear()
-      
+
         if data['date']:
             try:
                 Log("Trying to parse:" + data["date"])
@@ -109,7 +109,7 @@ class StashPlexAgent(Agent.Movies):
         # Get the Studio
         if not data["studio"] is None:
             metadata.studio = data["studio"]["name"]
-        
+
         # Get the rating
         if not data["rating"] is None:
             metadata.rating = float(data["rating"]) * 2
@@ -120,8 +120,8 @@ class StashPlexAgent(Agent.Movies):
                     try:
                         metadata.collections.add(ratingstring)
                     except:
-                        pass                  
-        
+                        pass
+
         # Set the summary
         if data['details']:
             summary=data["details"].replace("\n"," ").replace("\r", "").replace("\t","")
@@ -130,20 +130,28 @@ class StashPlexAgent(Agent.Movies):
         # Set series and add to collections
         if Prefs["CreateCollectionTags"]:
             if not data["studio"] is None:
-                site="Site: " + data["studio"]["name"]
-                try:
-                    metadata.collections.add(site)
-                except:
-                    pass
-                if not data["studio"]["parent_studio"] is None:
-                    site="Studio: " + data["studio"]["parent_studio"]["name"]
+                if Prefs["PrefixSiteCollectionTags"]:
+                    SitePrefix = Prefs["PrefixSiteCollectionTags"]
                 else:
-                    site="Studio: " + data["studio"]["name"]
+                    SitePrefix = "Site: "
+                site = SitePrefix + data["studio"]["name"]
                 try:
                     metadata.collections.add(site)
                 except:
                     pass
-            
+                if Prefs["PrefixStudioCollectionTags"]:
+                    StudioPrefix = Prefs["PrefixStudioCollectionTags"]
+                else:
+                    StudioPrefix = "Studio: "
+                if not data["studio"]["parent_studio"] is None:
+                    site = StudioPrefix + data["studio"]["parent_studio"]["name"]
+                else:
+                    site = StudioPrefix + data["studio"]["name"]
+                try:
+                    metadata.collections.add(site)
+                except:
+                    pass
+
         # Add the genres
         metadata.genres.clear()
         if Prefs["IgnoreTags"]:
@@ -157,7 +165,7 @@ class StashPlexAgent(Agent.Movies):
                         metadata.genres.add(genre["name"])
         except:
             pass
-            
+
         # Add the performers
         metadata.roles.clear()
         # Create and populate role with actor's name
@@ -165,7 +173,7 @@ class StashPlexAgent(Agent.Movies):
             if data["performers"]:
                 api_string = ""
                 if Prefs['APIKey']:
-                    api_string = '&apikey=%s' % Prefs['APIKey']            
+                    api_string = '&apikey=%s' % Prefs['APIKey']
                 models=data["performers"]
                 for model in models:
                     if DEBUG:
@@ -180,11 +188,11 @@ class StashPlexAgent(Agent.Movies):
         if not data["paths"]["screenshot"] is None:
             api_string = ""
             if Prefs['APIKey']:
-                api_string = '&apikey=%s' % Prefs['APIKey']            
+                api_string = '&apikey=%s' % Prefs['APIKey']
             try:
                 thumb = HTTP.Request(data["paths"]["screenshot"] + api_string)
-                metadata.posters[data["paths"]["screenshot"] + api_string] = Proxy.Preview(thumb)
-                metadata.art[data["paths"]["screenshot"] + api_string] = Proxy.Preview(thumb)
+                metadata.posters[data["paths"]["screenshot"] + api_string] = Proxy.Preview(thumb, sort_order=0)
+                metadata.art[data["paths"]["screenshot"] + api_string] = Proxy.Preview(thumb, sort_order=0)
             except:
                 pass
-            
+
