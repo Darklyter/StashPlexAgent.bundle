@@ -74,7 +74,7 @@ class StashPlexAgent(Agent.Movies):
         DEBUG = Prefs['debug']
         Log("update(%s)" % metadata.id)
         mid = metadata.id
-        id_query = "query{findScene(id:%s){path,id,title,details,url,date,rating,paths{screenshot,stream}studio{id,name,image_path,parent_studio{id,name,details}}tags{id,name}performers{name,image_path,tags{id,name}}movies{movie{name}}}}"
+        id_query = "query{findScene(id:%s){path,id,title,details,url,date,rating,paths{screenshot,stream}studio{id,name,image_path,parent_studio{id,name,details}}tags{id,name}performers{name,image_path,tags{id,name}}movies{movie{name}}galleries{id,title,url,images{id,title,path,file{size,width,height}}}}}"
         data = HttpReq(id_query % mid)
         data = data['data']['findScene']
         metadata.collections.clear()
@@ -118,7 +118,7 @@ class StashPlexAgent(Agent.Movies):
             metadata.summary = summary
 
         # Set series and add to collections
-        if Prefs["CreateCollectionTags"]:
+        if Prefs["CreateSiteCollectionTags"]:
             if not data["studio"] is None:
                 if Prefs["PrefixSiteCollectionTags"]:
                     SitePrefix = Prefs["PrefixSiteCollectionTags"]
@@ -126,9 +126,13 @@ class StashPlexAgent(Agent.Movies):
                     SitePrefix = "Site: "
                 site = SitePrefix + data["studio"]["name"]
                 try:
+                    if DEBUG:
+                        Log("Adding Site Collection: " + site)
                     metadata.collections.add(site)
                 except:
                     pass
+        if Prefs["CreateStudioCollectionTags"]:
+            if not data["studio"] is None:
                 if Prefs["PrefixStudioCollectionTags"]:
                     StudioPrefix = Prefs["PrefixStudioCollectionTags"]
                 else:
@@ -138,6 +142,8 @@ class StashPlexAgent(Agent.Movies):
                 else:
                     site = StudioPrefix + data["studio"]["name"]
                 try:
+                    if DEBUG:
+                        Log("Adding Studio Collection: " + site)
                     metadata.collections.add(site)
                 except:
                     pass
@@ -147,12 +153,26 @@ class StashPlexAgent(Agent.Movies):
         if Prefs["IgnoreTags"]:
             ignore_tags = Prefs["IgnoreTags"].split(",")
             ignore_tags = list(map(lambda x: x.strip(), ignore_tags))
+        else:
+            ignore_tags = []
+        if Prefs["CreateTagCollectionTags"]:
+            collection_tags = Prefs["CreateTagCollectionTags"].split(",")
+            collection_tags = list(map(lambda x: x.strip(), collection_tags))
+        else:
+            collection_tags = []
         try:
             if data["tags"]:
                 genres = data["tags"]
                 for genre in genres:
                     if not genre["id"] in ignore_tags and "ambiguous" not in genre["name"].lower():
                         metadata.genres.add(genre["name"])
+                        if genre["id"] in collection_tags:
+                            try:
+                                if DEBUG:
+                                    Log("Adding Tag Collection: " + genre["name"])
+                                metadata.collections.add(genre["name"])
+                            except:
+                                pass
             if Prefs["AppendPerformerTags"]:
                 for performer in data["performers"]:
                     if performer["tags"]:
@@ -162,6 +182,13 @@ class StashPlexAgent(Agent.Movies):
                                 if DEBUG:
                                     Log("Added Performer (" + performer['name'] + ") tag to scene: " + genre['name'] )
                                 metadata.genres.add(genre["name"])
+                                if genre["id"] in collection_tags:
+                                    try:
+                                        if DEBUG:
+                                            Log("Adding Tag Collection: " + genre["name"])
+                                        metadata.collections.add(genre["name"])
+                                    except:
+                                        pass
         except:
             pass
 
@@ -194,3 +221,35 @@ class StashPlexAgent(Agent.Movies):
                 metadata.art[data["paths"]["screenshot"] + api_string] = Proxy.Preview(thumb, sort_order=0)
             except Exception as e:
                 pass
+
+        if Prefs["IncludeGalleryImages"]:
+            api_string = ""
+            if Prefs['APIKey']:
+                api_string = '&apikey=%s' % Prefs['APIKey']
+            if Prefs['UseHTTPS']:
+                imagestring = 'https://%s:%s/image/%s/image' + api_string
+            else:
+                imagestring = 'http://%s:%s/image/%s/image' + api_string
+            if not data["galleries"] is None:
+                for gallery in data["galleries"]:
+                    for image in gallery["images"]:
+                        if Prefs["SortGalleryImages"]:
+                            if image["file"]["height"] > image["file"]["width"]:
+                                image_orientation = "poster"
+                            else:
+                                image_orientation = "background"
+                        else:
+                            image_orientation = "all"
+                        imageurl = imagestring % (Prefs['Hostname'], Prefs['Port'], image["id"])
+                        try:
+                            thumb = HTTP.Request(imageurl)
+                            if image_orientation == "poster" or image_orientation == "all":
+                                if DEBUG:
+                                    Log("Inserting Poster image: " + image["title"] + " (" + str(image["file"]["width"]) + "x" + str(image["file"]["height"]) + " WxH)")
+                                metadata.posters[imageurl] = Proxy.Preview(thumb)
+                            if image_orientation == "background" or image_orientation == "all":
+                                if DEBUG:
+                                    Log("Inserting Background image: " + image["title"] + " (" + str(image["file"]["width"]) + "x" + str(image["file"]["height"]) + " WxH)")
+                                    metadata.art[imageurl] = Proxy.Preview(thumb)
+                        except Exception as e:
+                            pass

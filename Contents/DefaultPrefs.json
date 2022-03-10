@@ -24,6 +24,18 @@
         "default": ""
     },
     {
+        "id": "IncludeGalleryImages",
+        "label": "Include attached Gallery images in addition to default poster?",
+        "type": "bool",
+        "default": false
+    },
+    {
+        "id": "SortGalleryImages",
+        "label": "If including gallery images, auto sort into poster/background based on orientation?",
+        "type": "bool",
+        "default": false
+    },
+    {
         "id": "AppendPerformerTags",
         "label": "Include Performer Tags with the scraped scene tags?",
         "type": "bool",
@@ -36,8 +48,14 @@
         "default": "1,2,3318,6279"
     },
     {
-        "id": "CreateCollectionTags",
-        "label": "Auto create Plex Collection tags for Site and Studio",
+        "id": "CreateTagCollectionTags",
+        "label": "Stash Tag ID numbers create Collections from (comma separated, 0 to disable)",
+        "type": "text",
+        "default": "0"
+    },
+    {
+        "id": "CreateSiteCollectionTags",
+        "label": "Auto create Plex Collection tags for scene Site",
         "type": "bool",
         "default": true
     },
@@ -46,6 +64,12 @@
         "label": "Prefix for Site Collection Names (The Site name will be appended to this value)",
         "type": "text",
         "default": "Site: "
+    },
+    {
+        "id": "CreateStudioCollectionTags",
+        "label": "Auto create Plex Collection tags for scene Studio",
+        "type": "bool",
+        "default": true
     },
     {
         "id": "PrefixStudioCollectionTags",
