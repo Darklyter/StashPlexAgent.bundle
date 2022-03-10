@@ -24,6 +24,12 @@
         "default": ""
     },
     {
+        "id": "AppendPerformerTags",
+        "label": "Include Performer Tags with the scraped scene tags?",
+        "type": "bool",
+        "default": false
+    },
+    {
         "id": "IgnoreTags",
         "label": "Stash Tag ID numbers to ignore (comma separated, 0 to disable)",
         "type": "text",

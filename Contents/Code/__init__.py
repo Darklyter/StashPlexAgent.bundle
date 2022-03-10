@@ -1,16 +1,6 @@
 import os
-import re
-import time
-import string
-import thread
-import threading
-import copy
-import json
 import dateutil.parser as dateparser
-from urllib2 import HTTPError
 from urllib2 import quote
-from datetime import datetime
-from lxml import etree
 
 # preferences
 preference = Prefs
@@ -46,7 +36,7 @@ def HttpReq(url, authenticate=True, retry=True):
         Log(connecttoken)
         return JSON.ObjectFromString(
             HTTP.Request(connecttoken).content)
-    except Exception, e:
+    except Exception as e:
         if not retry:
             raise e
         return HttpReq(url, authenticate, False)
@@ -84,7 +74,7 @@ class StashPlexAgent(Agent.Movies):
         DEBUG = Prefs['debug']
         Log("update(%s)" % metadata.id)
         mid = metadata.id
-        id_query = "query{findScene(id:%s){path,id,title,details,url,date,rating,paths{screenshot,stream}studio{id,name,image_path,parent_studio{id,name,details}}tags{id,name}performers{name,image_path}movies{movie{name}}}}"
+        id_query = "query{findScene(id:%s){path,id,title,details,url,date,rating,paths{screenshot,stream}studio{id,name,image_path,parent_studio{id,name,details}}tags{id,name}performers{name,image_path,tags{id,name}}movies{movie{name}}}}"
         data = HttpReq(id_query % mid)
         data = data['data']['findScene']
         metadata.collections.clear()
@@ -124,7 +114,7 @@ class StashPlexAgent(Agent.Movies):
 
         # Set the summary
         if data['details']:
-            summary=data["details"].replace("\n"," ").replace("\r", "").replace("\t","")
+            summary = data["details"].replace("\n", " ").replace("\r", "").replace("\t", "")
             metadata.summary = summary
 
         # Set series and add to collections
@@ -163,6 +153,15 @@ class StashPlexAgent(Agent.Movies):
                 for genre in genres:
                     if not genre["id"] in ignore_tags and "ambiguous" not in genre["name"].lower():
                         metadata.genres.add(genre["name"])
+            if Prefs["AppendPerformerTags"]:
+                for performer in data["performers"]:
+                    if performer["tags"]:
+                        genres = performer["tags"]
+                        for genre in genres:
+                            if not genre["id"] in ignore_tags and "ambiguous" not in genre["name"].lower() and genre["name"] not in metadata.genres:
+                                if DEBUG:
+                                    Log("Added Performer (" + performer['name'] + ") tag to scene: " + genre['name'] )
+                                metadata.genres.add(genre["name"])
         except:
             pass
 
@@ -179,8 +178,8 @@ class StashPlexAgent(Agent.Movies):
                     if DEBUG:
                         Log("Pulling Model: " + model["name"] + " With Image: " + model["image_path"])
                     role = metadata.roles.new()
-                    role.name=model["name"]
-                    role.photo=model["image_path"] + api_string
+                    role.name = model["name"]
+                    role.photo = model["image_path"] + api_string
         except:
             pass
 
@@ -193,6 +192,5 @@ class StashPlexAgent(Agent.Movies):
                 thumb = HTTP.Request(data["paths"]["screenshot"] + api_string)
                 metadata.posters[data["paths"]["screenshot"] + api_string] = Proxy.Preview(thumb, sort_order=0)
                 metadata.art[data["paths"]["screenshot"] + api_string] = Proxy.Preview(thumb, sort_order=0)
-            except:
+            except Exception as e:
                 pass
-
