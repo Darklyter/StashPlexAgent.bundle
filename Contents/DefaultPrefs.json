@@ -78,6 +78,18 @@
         "default": "Studio: "
     },
     {
+        "id": "CreateMovieCollectionTags",
+        "label": "Auto create Plex Collection tags for associated scene Movie",
+        "type": "bool",
+        "default": false
+    },
+    {
+        "id": "PrefixMovieCollectionTags",
+        "label": "Prefix for Movie Collection Names (The Movie title (if available) will be appended to this value)",
+        "type": "text",
+        "default": "Movie: "
+    },
+    {
         "id": "CreateRatingTags",
         "label": "Auto create Plex Collection tags for Stash star rating",
         "type": "bool",

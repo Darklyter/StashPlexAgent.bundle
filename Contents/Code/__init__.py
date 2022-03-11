@@ -74,7 +74,7 @@ class StashPlexAgent(Agent.Movies):
         DEBUG = Prefs['debug']
         Log("update(%s)" % metadata.id)
         mid = metadata.id
-        id_query = "query{findScene(id:%s){path,id,title,details,url,date,rating,paths{screenshot,stream}studio{id,name,image_path,parent_studio{id,name,details}}organized,stash_ids{stash_id}tags{id,name}performers{name,image_path,tags{id,name}}movies{movie{name}}galleries{id,title,url,images{id,title,path,file{size,width,height}}}}}"
+        id_query = "query{findScene(id:%s){path,id,title,details,url,date,rating,paths{screenshot,stream}movies{movie{id,name}}studio{id,name,image_path,parent_studio{id,name,details}}organized,stash_ids{stash_id}tags{id,name}performers{name,image_path,tags{id,name}}movies{movie{name}}galleries{id,title,url,images{id,title,path,file{size,width,height}}}}}"
         data = HttpReq(id_query % mid)
         data = data['data']['findScene']
         metadata.collections.clear()
@@ -169,6 +169,21 @@ class StashPlexAgent(Agent.Movies):
                         metadata.collections.add(site)
                     except:
                         pass
+            if Prefs["CreateMovieCollectionTags"]:
+                if not data["movies"] is None:
+                    for movie in data["movies"]:
+                        if Prefs["PrefixMovieCollectionTags"]:
+                            MoviePrefix = Prefs["PrefixMovieCollectionTags"]
+                        else:
+                            MoviePrefix = "Movie: "
+                        if "name" in movie["movie"]:
+                            movie_collection = MoviePrefix + movie["movie"]["name"]
+                        try:
+                            if DEBUG:
+                                Log("Adding Movie Collection: " + movie_collection)
+                            metadata.collections.add(movie_collection)
+                        except:
+                            pass
 
             # Add the genres
             metadata.genres.clear()
