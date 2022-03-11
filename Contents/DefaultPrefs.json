@@ -84,6 +84,24 @@
         "default": false
     },
     {
+        "id": "RequireOrganized",
+        "label": "Require Organized flag to be set in Stash to pull metadata",
+        "type": "bool",
+        "default": false
+    },
+    {
+        "id": "RequireURL",
+        "label": "Require scene URL to be set in Stash to pull metadata",
+        "type": "bool",
+        "default": false
+    },
+    {
+        "id": "RequireStashID",
+        "label": "Require a scene StashID to be set in Stash to pull metadata",
+        "type": "bool",
+        "default": false
+    },
+    {
         "id": "debug",
         "label": "Use debug logging",
         "type": "bool",
