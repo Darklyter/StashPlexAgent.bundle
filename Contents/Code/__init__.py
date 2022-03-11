@@ -184,6 +184,21 @@ class StashPlexAgent(Agent.Movies):
                             metadata.collections.add(movie_collection)
                         except:
                             pass
+            if Prefs["CreatePerformerCollectionTags"]:
+                if not data["performers"] is None:
+                    for performer in data["performers"]:
+                        if Prefs["CreatePerformerCollectionTags"]:
+                            PerformerPrefix = Prefs["PrefixPerformerCollectionTags"]
+                        else:
+                            PerformerPrefix = "Actor: "
+                        if "name" in performer:
+                            actor_collection = PerformerPrefix + performer["name"]
+                        try:
+                            if DEBUG:
+                                Log("Adding Performer Collection: " + actor_collection)
+                            metadata.collections.add(actor_collection)
+                        except:
+                            pass
 
             # Add the genres
             metadata.genres.clear()

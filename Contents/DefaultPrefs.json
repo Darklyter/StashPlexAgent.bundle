@@ -90,6 +90,18 @@
         "default": "Movie: "
     },
     {
+        "id": "CreatePerformerCollectionTags",
+        "label": "Auto create Plex Collection tags for associated Performers",
+        "type": "bool",
+        "default": false
+    },
+    {
+        "id": "PrefixPerformerCollectionTags",
+        "label": "Prefix for Performer Collection Names (The performer (if available) will be appended to this value)",
+        "type": "text",
+        "default": "Actor: "
+    },
+    {
         "id": "CreateRatingTags",
         "label": "Auto create Plex Collection tags for Stash star rating",
         "type": "bool",
