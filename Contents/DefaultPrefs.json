@@ -72,6 +72,12 @@
         "default": true
     },
     {
+        "id": "UseSiteForStudioCollectionTags",
+        "label": "If Studio is not defined, use Site instead (In Stash, Studio is the parent of the scene Studio)",
+        "type": "bool",
+        "default": false
+    },
+    {
         "id": "PrefixStudioCollectionTags",
         "label": "Prefix for Studio Collection Names (The Studio name (if available) will be appended to this value)",
         "type": "text",

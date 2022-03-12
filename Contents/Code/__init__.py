@@ -162,11 +162,15 @@ class StashPlexAgent(Agent.Movies):
                     if not data["studio"]["parent_studio"] is None:
                         site = StudioPrefix + data["studio"]["parent_studio"]["name"]
                     else:
-                        site = StudioPrefix + data["studio"]["name"]
+                        if Prefs["UseSiteForStudioCollectionTags"]:
+                            site = StudioPrefix + data["studio"]["name"]
+                        else:
+                            site = None
                     try:
                         if DEBUG:
                             Log("Adding Studio Collection: " + site)
-                        metadata.collections.add(site)
+                        if site:
+                            metadata.collections.add(site)
                     except:
                         pass
             if Prefs["CreateMovieCollectionTags"]:
