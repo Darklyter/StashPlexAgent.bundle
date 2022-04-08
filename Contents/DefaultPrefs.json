@@ -9,7 +9,7 @@
         "id": "Port",
         "label": "The port for Stash",
         "type": "text",
-        "default": "9999"
+        "default": "8009"
     },
     {
         "id": "UseHTTPS",
@@ -63,7 +63,7 @@
         "id": "IgnoreTags",
         "label": "Stash Tag ID numbers to ignore (comma separated, 0 to disable)",
         "type": "text",
-        "default": "1,2,3318,6279"
+        "default": "0"
     },
     {
         "id": "CreateTagCollectionTags",
