@@ -54,6 +54,7 @@ class StashPlexAgent(Agent.Movies):
         DEBUG = Prefs['debug']
         mediaFile = media.items[0].parts[0].file
         filename = String.Unquote(mediaFile).encode('utf8', 'ignore')
+        filename_clean = os.path.splitext(os.path.basename(filename))[0]
         if (Prefs["UseFullMediaPath"]):
             file_query = r"""query{findScenes(scene_filter:{path:{value:"<FILENAME>",modifier:EQUALS}}){scenes{id,title,date,studio{id,name}}}}"""
         else:
@@ -71,7 +72,7 @@ class StashPlexAgent(Agent.Movies):
                 if scene['date']:
                     title = scene['title'] + ' - ' + scene['date']
                 else:
-                    title = scene['title']
+                    title = filename_clean
                 Log("Title Found: " + title + " Score: " + str(score) + " ID:" + scene['id'])
                 results.Append(MetadataSearchResult(id = str(scene['id']), name = title, score = int(score), lang = lang))
 
