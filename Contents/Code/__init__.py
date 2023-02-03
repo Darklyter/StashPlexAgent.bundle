@@ -23,7 +23,8 @@ def Start():
 
 
 def HttpReq(url, authenticate=True, retry=True):
-    Log("Requesting: %s" % url)
+    if DEBUG:
+        Log("Requesting: %s" % url)
     api_string = ''
     if Prefs['APIKey']:
         api_string = '&apikey=%s' % Prefs['APIKey']
@@ -34,7 +35,8 @@ def HttpReq(url, authenticate=True, retry=True):
         connectstring = 'http://%s:%s/graphql?query=%s%s'
     try:
         connecttoken = connectstring % (Prefs['Hostname'].strip(), Prefs['Port'].strip(), url, api_string)
-        Log(connecttoken)
+        if DEBUG:
+            Log(connecttoken)
         return JSON.ObjectFromString(
             HTTP.Request(connecttoken).content)
     except Exception as e:
