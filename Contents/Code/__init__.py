@@ -300,8 +300,10 @@ class StashPlexAgent(Agent.Movies):
                     api_string = '&apikey=%s' % Prefs['APIKey']
                 try:
                     thumb = HTTP.Request(data["paths"]["screenshot"] + api_string)
-                    clear_posters(metadata)
-                    clear_art(metadata)
+                    # TODO: see performance impact vs benefit of these two clear_ methods.
+                    #  Seems to impact IO, and probably shouldn't be needed due to Plex removing old bundles every week.
+                    #clear_posters(metadata)
+                    #clear_art(metadata)
                     metadata.posters[data["paths"]["screenshot"] + api_string] = Proxy.Media(thumb, sort_order=0)
                     metadata.art[data["paths"]["screenshot"] + api_string] = Proxy.Media(thumb, sort_order=0)
                 except Exception as e:
