@@ -24,6 +24,12 @@
         "default": ""
     },
     {
+        "id": "UseFullMediaPath",
+        "label": "Query the entire file path while matching in Stash. Use only if the folder path in Stash is the same as in Plex.",
+        "type": "bool",
+        "default": false
+    },
+    {
         "id": "IncludeGalleryImages",
         "label": "Include attached Gallery images in addition to default poster?",
         "type": "bool",
@@ -52,6 +58,18 @@
         "label": "Stash Tag ID numbers create Collections from (comma separated, 0 to disable)",
         "type": "text",
         "default": "0"
+    },
+    {
+        "id": "AddOrganizedCollectionTag",
+        "label": "Auto add media marked as organized into a Plex Collection",
+        "type": "bool",
+        "default": false
+    },
+    {
+        "id": "OrganizedCollectionTagName",
+        "label": "Name for the collection containing all media marked as organized in Stash",
+        "type": "text",
+        "default": "Organized"
     },
     {
         "id": "CreateAllTagCollectionTags",

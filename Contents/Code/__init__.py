@@ -1,6 +1,7 @@
 import os
 import dateutil.parser as dateparser
 from urllib2 import quote
+#from Helpers import *
 
 # preferences
 preference = Prefs
@@ -22,7 +23,8 @@ def Start():
 
 
 def HttpReq(url, authenticate=True, retry=True):
-    Log("Requesting: %s" % url)
+    if DEBUG:
+        Log("Requesting: %s" % url)
     api_string = ''
     if Prefs['APIKey']:
         api_string = '&apikey=%s' % Prefs['APIKey']
@@ -33,7 +35,8 @@ def HttpReq(url, authenticate=True, retry=True):
         connectstring = 'http://%s:%s/graphql?query=%s%s'
     try:
         connecttoken = connectstring % (Prefs['Hostname'].strip(), Prefs['Port'].strip(), url, api_string)
-        Log(connecttoken)
+        if DEBUG:
+            Log(connecttoken)
         return JSON.ObjectFromString(
             HTTP.Request(connecttoken).content)
     except Exception as e:
@@ -45,14 +48,20 @@ class StashPlexAgent(Agent.Movies):
     name = 'Stash Plex Agent'
     languages = [Locale.Language.English]
     primary_provider = True
-    accepts_from = ['com.plexapp.agents.localmedia', 'com.plexapp.agents.xbmcnfo', 'com.plexapp.agents.phoenixadult', 'com.plexapp.agents.data18-phoenix', 'com.plexapp.agents.adultdvdempire']
+    fallback_agent = False
+    contributes_to = None
+    accepts_from = ['com.plexapp.agents.xbmcnfo', 'com.plexapp.agents.phoenixadult', 'com.plexapp.agents.data18-phoenix', 'com.plexapp.agents.adultdvdempire']
 
     def search(self, results, media, lang):
         DEBUG = Prefs['debug']
-        file_query = r"""query{findScenes(scene_filter:{path:{value:"\"<FILENAME>\"",modifier:INCLUDES}}){scenes{id,title,date,studio{id,name}}}}"""
         mediaFile = media.items[0].parts[0].file
         filename = String.Unquote(mediaFile).encode('utf8', 'ignore')
-        filename = os.path.splitext(os.path.basename(filename))[0]
+        filename_clean = os.path.splitext(os.path.basename(filename))[0]
+        if (Prefs["UseFullMediaPath"]):
+            file_query = r"""query{findScenes(scene_filter:{path:{value:"<FILENAME>",modifier:EQUALS}}){scenes{id,title,date,studio{id,name}}}}"""
+        else:
+            file_query = r"""query{findScenes(scene_filter:{path:{value:"\"<FILENAME>\"",modifier:INCLUDES}}){scenes{id,title,date,studio{id,name}}}}"""
+            filename = os.path.splitext(os.path.basename(filename))[0]
         if filename:
             filename = str(quote(filename.encode('UTF-8')))
             query = file_query.replace("<FILENAME>", filename)
@@ -65,7 +74,7 @@ class StashPlexAgent(Agent.Movies):
                 if scene['date']:
                     title = scene['title'] + ' - ' + scene['date']
                 else:
-                    title = scene['title']
+                    title = filename_clean
                 Log("Title Found: " + title + " Score: " + str(score) + " ID:" + scene['id'])
                 results.Append(MetadataSearchResult(id = str(scene['id']), name = title, score = int(score), lang = lang))
 
@@ -99,6 +108,17 @@ class StashPlexAgent(Agent.Movies):
         else:
             Log("Failed 'Organized' Check, stopping.")
             allow_scrape = False
+
+        if (Prefs["AddOrganizedCollectionTag"] and data["organized"]):
+            Log("Scene marked as organized, adding collection.")
+            if (Prefs["OrganizedCollectionTagName"]):
+                organized_string = Prefs["OrganizedCollectionTagName"]
+            else:
+                organized_string = "Organized"
+            try:
+                metadata.collections.add(organized_string)
+            except:
+                pass
 
         if allow_scrape:
             if data['date']:
@@ -280,9 +300,14 @@ class StashPlexAgent(Agent.Movies):
                     api_string = '&apikey=%s' % Prefs['APIKey']
                 try:
                     thumb = HTTP.Request(data["paths"]["screenshot"] + api_string)
-                    metadata.posters[data["paths"]["screenshot"] + api_string] = Proxy.Preview(thumb, sort_order=0)
-                    metadata.art[data["paths"]["screenshot"] + api_string] = Proxy.Preview(thumb, sort_order=0)
+                    # TODO: see performance impact vs benefit of these two clear_ methods.
+                    #  Seems to impact IO, and probably shouldn't be needed due to Plex removing old bundles every week.
+                    #clear_posters(metadata)
+                    #clear_art(metadata)
+                    metadata.posters[data["paths"]["screenshot"] + api_string] = Proxy.Media(thumb, sort_order=0)
+                    metadata.art[data["paths"]["screenshot"] + api_string] = Proxy.Media(thumb, sort_order=0)
                 except Exception as e:
+                    Log.Exception('Exception creating posters: %s' % str(e))
                     pass
 
             if Prefs["IncludeGalleryImages"]:
@@ -309,10 +334,10 @@ class StashPlexAgent(Agent.Movies):
                                 if image_orientation == "poster" or image_orientation == "all":
                                     if DEBUG:
                                         Log("Inserting Poster image: " + image["title"] + " (" + str(image["file"]["width"]) + "x" + str(image["file"]["height"]) + " WxH)")
-                                    metadata.posters[imageurl] = Proxy.Preview(thumb)
+                                    metadata.posters[imageurl] = Proxy.Media(thumb)
                                 if image_orientation == "background" or image_orientation == "all":
                                     if DEBUG:
                                         Log("Inserting Background image: " + image["title"] + " (" + str(image["file"]["width"]) + "x" + str(image["file"]["height"]) + " WxH)")
-                                        metadata.art[imageurl] = Proxy.Preview(thumb)
+                                        metadata.art[imageurl] = Proxy.Media(thumb)
                             except Exception as e:
                                 pass
