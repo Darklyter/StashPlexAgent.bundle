@@ -2,6 +2,7 @@ import os
 import dateutil.parser as dateparser
 from urllib2 import quote
 #from Helpers import *
+import copy
 
 # preferences
 preference = Prefs
@@ -14,13 +15,11 @@ else:
 def ValidatePrefs():
     pass
 
-
 def Start():
     Log("Stash metadata agent started")
     HTTP.Headers['Accept'] = 'application/json'
     HTTP.CacheTime = 0.1
     ValidatePrefs()
-
 
 def HttpReq(url, authenticate=True, retry=True):
     if DEBUG:
@@ -43,6 +42,56 @@ def HttpReq(url, authenticate=True, retry=True):
         if not retry:
             raise e
         return HttpReq(url, authenticate, False)
+
+# set title with stash metadata
+# TODO: add advanced mode to be able to format title with any scene metadata
+def FormattedTitle(data, fallback_title=None):
+    title = data['title']
+    title_format = Prefs['TitleFormat']
+
+    def remove_prefix(text, prefix):
+        if text.startswith(prefix):
+            return text[len(prefix):]
+        return text  # or whatever
+
+    if title is None or title == u'':
+        Log("Stash title is empty, using fallback title: %s" % fallback_title)
+        return fallback_title
+    else:
+        performer = ""
+        date = data['date']
+        title = data['title']
+        if "performer" in title_format:
+            performers = copy.copy(data['performers'])
+            Log("original performers: %s" % performers)
+            if len(performers) > 0:
+                # filter out performers with no name or performers with the tag 'PlexPluginSkipTitle'
+                for idx in range(len(performers)-1):
+                    performer = performers[idx]
+                    Log("check performer: %s" % performer['name'])
+                    if 'name' in performer and performer['name'] is None or performer['name'] == u'':
+                        performers.remove(performer)
+                    if 'tags' in performer and performer['tags'] is not None and len(performer['tags']) > 0:
+                        if Prefs["IgnoreTags"]:
+                            ignore_tags = Prefs["IgnoreTags"].split(",")
+                            ignore_tags = list(map(lambda x: x.strip(), ignore_tags))
+                        else:
+                            ignore_tags = []
+                        for tag in performer['tags']:
+                            if tag['id'] in ignore_tags:
+                                performers.remove(performer)
+                                continue
+                Log("filtered performers: %s" % performers)
+                if (len(performers) > 0 and performers[0]['name']):
+                    performer = performers[0]['name']
+                    # remove duplicate performer name from title
+                    title = remove_prefix(title, performer)
+                    title = remove_prefix(title, " - ")
+                    title = title.strip()
+
+        title = title_format.format(performer=performer, title=title, date=data['date'])
+    return title
+
 
 class StashPlexAgent(Agent.Movies):
     name = 'Stash Plex Agent'
@@ -76,6 +125,8 @@ class StashPlexAgent(Agent.Movies):
                 else:
                     title = filename_clean
                 Log("Title Found: " + title + " Score: " + str(score) + " ID:" + scene['id'])
+                if Prefs['UseFormattedTitle']:
+                    title = FormattedTitle(scene, title)
                 results.Append(MetadataSearchResult(id = str(scene['id']), name = title, score = int(score), lang = lang))
 
 
@@ -136,7 +187,10 @@ class StashPlexAgent(Agent.Movies):
 
             # Get the title
             if data['title']:
-                metadata.title = data["title"]
+                title = data["title"]
+                if Prefs['UseFormattedTitle']:
+                    title = FormattedTitle(data, title)
+                metadata.title = title
 
             # Get the Studio
             if not data["studio"] is None:
