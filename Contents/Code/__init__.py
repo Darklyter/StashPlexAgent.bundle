@@ -59,6 +59,7 @@ def FormattedTitle(data, fallback_title=None):
         return fallback_title
     else:
         performer = ""
+        studio = ""
         date = data['date']
         title = data['title']
         if "performer" in title_format:
@@ -88,8 +89,15 @@ def FormattedTitle(data, fallback_title=None):
                     title = remove_prefix(title, performer)
                     title = remove_prefix(title, " - ")
                     title = title.strip()
+        if "studio" in title_format:
+            studio = data['studio']['name']
 
-        title = title_format.format(performer=performer, title=title, date=data['date'])
+        title = title_format.format(
+            performer=performer,
+            title=title,
+            date=data['date'],
+            studio=studio
+        )
     return title
 
 
