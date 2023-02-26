@@ -30,6 +30,18 @@
         "default": false
     },
     {
+        "id": "UseFormattedTitle",
+        "label": "Use a formatted title for Plex using Stash metadata",
+        "type": "bool",
+        "default": false
+    },
+    {
+        "id": "TitleFormat",
+        "label": "Title format to use if enabled (available variables: performer, title, date, studio). Use IgnoreTags to ignore a performer from title.",
+        "type": "text",
+        "default": "{performer} - {title}"
+    },
+    {
         "id": "IncludeGalleryImages",
         "label": "Include attached Gallery images in addition to default poster?",
         "type": "bool",
@@ -160,5 +172,5 @@
         "label": "Use debug logging",
         "type": "bool",
         "default": false
-    },
+    }
 ]
