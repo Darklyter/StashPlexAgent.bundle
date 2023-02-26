@@ -24,24 +24,6 @@
         "default": ""
     },
     {
-        "id": "UseFullMediaPath",
-        "label": "Query the entire file path while matching in Stash. Use only if the folder path in Stash is the same as in Plex.",
-        "type": "bool",
-        "default": false
-    },
-    {
-        "id": "UseFormattedTitle",
-        "label": "Use a formatted title for Plex using Stash metadata",
-        "type": "bool",
-        "default": false
-    },
-    {
-        "id": "TitleFormat",
-        "label": "Title format to use if enabled (available variables: performer, title, date, studio). Use IgnoreTags to ignore a performer from title.",
-        "type": "text",
-        "default": "{performer} - {title}"
-    },
-    {
         "id": "IncludeGalleryImages",
         "label": "Include attached Gallery images in addition to default poster?",
         "type": "bool",
@@ -70,18 +52,6 @@
         "label": "Stash Tag ID numbers create Collections from (comma separated, 0 to disable)",
         "type": "text",
         "default": "0"
-    },
-    {
-        "id": "AddOrganizedCollectionTag",
-        "label": "Auto add media marked as organized into a Plex Collection",
-        "type": "bool",
-        "default": false
-    },
-    {
-        "id": "OrganizedCollectionTagName",
-        "label": "Name for the collection containing all media marked as organized in Stash",
-        "type": "text",
-        "default": "Organized"
     },
     {
         "id": "CreateAllTagCollectionTags",
@@ -150,12 +120,6 @@
         "default": false
     },
     {
-        "id": "SaveUserRatings",
-        "label": "Auto sync Stash ratings to Plex user ratings",
-        "type": "bool",
-        "default": false
-    },
-    {
         "id": "RequireOrganized",
         "label": "Require Organized flag to be set in Stash to pull metadata",
         "type": "bool",
@@ -178,5 +142,5 @@
         "label": "Use debug logging",
         "type": "bool",
         "default": false
-    }
+    },
 ]
