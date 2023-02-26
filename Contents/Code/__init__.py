@@ -88,7 +88,7 @@ class StashPlexAgent(Agent.Movies):
                     Log("Passed 'RequireURL' Check, continuing...")
                 if (Prefs["RequireStashID"] and len(data["stash_ids"])) or not Prefs["RequireStashID"]:
                     if DEBUG and Prefs["RequireStashID"]:
-                        Log("Passed 'RequireStashID' Check, continuing...")
+                        Log("Passed 'RequireURL' Check, continuing...")
                     allow_scrape = True
                 else:
                     Log("Failed 'RequireStashID' Check, stopping.")
@@ -124,18 +124,15 @@ class StashPlexAgent(Agent.Movies):
 
             # Get the rating
             if not data["rating"] is None:
-                if float(data["rating"]) > 10:
-                    metadata.rating = float(data["rating"]) / 10
-                else:
-                    metadata.rating = float(data["rating"]) * 2
-                    if Prefs["CreateRatingTags"]:
-                        if int(data["rating"]) > 0:
-                            rating = str(int(data["rating"]))
-                            ratingstring = "Rating: " + rating + " Stars"
-                            try:
-                                metadata.collections.add(ratingstring)
-                            except:
-                                pass
+                metadata.rating = float(data["rating"]) * 2
+                if Prefs["CreateRatingTags"]:
+                    if int(data["rating"]) > 0:
+                        rating = str(int(data["rating"]))
+                        ratingstring = "Rating: " + rating + " Stars"
+                        try:
+                            metadata.collections.add(ratingstring)
+                        except:
+                            pass
 
             # Set the summary
             if data['details']:
