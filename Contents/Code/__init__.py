@@ -1,6 +1,5 @@
-import os
+import os, urllib, urllib2, json
 import dateutil.parser as dateparser
-from urllib2 import quote
 #from Helpers import *
 import copy
 
@@ -120,7 +119,7 @@ class StashPlexAgent(Agent.Movies):
             file_query = r"""query{findScenes(scene_filter:{path:{value:"\"<FILENAME>\"",modifier:INCLUDES}}){scenes{id,title,date,studio{id,name}}}}"""
             filename = os.path.splitext(os.path.basename(filename))[0]
         if filename:
-            filename = str(quote(filename.encode('UTF-8')))
+            filename = str(urllib2.quote(filename.encode('UTF-8')))
             query = file_query.replace("<FILENAME>", filename)
             request = HttpReq(query)
             if DEBUG:
@@ -142,7 +141,7 @@ class StashPlexAgent(Agent.Movies):
         DEBUG = Prefs['debug']
         Log("update(%s)" % metadata.id)
         mid = metadata.id
-        id_query = "query{findScene(id:%s){path,id,title,details,url,date,rating,paths{screenshot,stream}movies{movie{id,name}}studio{id,name,image_path,parent_studio{id,name,details}}organized,stash_ids{stash_id}tags{id,name}performers{name,image_path,tags{id,name}}movies{movie{name}}galleries{id,title,url,images{id,title,path,file{size,width,height}}}}}"
+        id_query = "query{findScene(id:%s){path,id,title,details,url,date,rating,rating100,paths{screenshot,stream}movies{movie{id,name}}studio{id,name,image_path,parent_studio{id,name,details}}organized,stash_ids{stash_id}tags{id,name}performers{name,image_path,tags{id,name}}movies{movie{name}}galleries{id,title,url,images{id,title,path,file{size,width,height}}}}}"
         data = HttpReq(id_query % mid)
         data = data['data']['findScene']
         metadata.collections.clear()
@@ -206,7 +205,8 @@ class StashPlexAgent(Agent.Movies):
 
             # Get the rating
             if not data["rating"] is None:
-                metadata.rating = float(data["rating"]) * 2
+                stashRating = float(data["rating100"] / 10)
+                metadata.rating = stashRating
                 if Prefs["CreateRatingTags"]:
                     if int(data["rating"]) > 0:
                         rating = str(int(data["rating"]))
@@ -215,6 +215,56 @@ class StashPlexAgent(Agent.Movies):
                             metadata.collections.add(ratingstring)
                         except:
                             pass
+                if Prefs["SaveUserRatings"]:
+                    # set stash rating to plex rating
+                    if not stashRating is None:
+                        Log('Set media rating to %s' % stashRating)
+                        host = "http://127.0.0.1:32400"
+                        token = os.environ['PLEXTOKEN']
+
+                        # get section details
+                        # inspired by https://github.com/suparngp/plex-personal-shows-agent.bundle/blob/master/Contents/Code/__init__.py#L31
+                        sectionQueryEncoded = urllib.urlencode({
+                            "X-Plex-Token": token
+                        })
+                        section_lookup_url = '{host}/library/metadata/{media_id}?{sectionQueryEncoded}'.format(
+                            host=host,
+                            media_id=media.id,
+                            sectionQueryEncoded=sectionQueryEncoded
+                        )
+                        if DEBUG:
+                            Log('Section lookup request: %s' % section_lookup_url)
+                        metadata = json.loads(HTTP.Request(url=section_lookup_url, immediate=True, headers={'Accept': 'application/json'}).content)
+                        
+                        identifier = metadata['MediaContainer']['identifier']
+                        rating_key = metadata['MediaContainer']['Metadata'][0]['ratingKey']
+                        userRating = metadata['MediaContainer']['Metadata'][0]['userRating']
+                        
+                        if float(userRating) != float(stashRating):
+                            rateQueryEncoded = urllib.urlencode({
+                                "key": rating_key,
+                                "identifier": identifier,
+                                "rating": stashRating,
+                                "X-Plex-Token": token
+                            })
+                            rateUrl = '{host}/:/rate?{rateQueryEncoded}'.format(
+                                host=host,
+                                rateQueryEncoded=rateQueryEncoded
+                            )
+                            if DEBUG:
+                                Log('Rate request: %s' % rateUrl)
+                            # inspired by https://github.com/pkkid/python-plexapi/blob/9b8c7d522d1ca94a0782b940c03d257d8dd071a0/plexapi/mixins.py#L317
+                            request = urllib2.Request(url=rateUrl, data=urllib.urlencode({'dummy':'dummy'}), headers={
+                                'Content-Type': 'text/html',
+                            })
+                            request.get_method = lambda: 'GET'
+                            response = urllib2.urlopen(request)
+                            if DEBUG:
+                                Log("setUserRating: response: %s" % response.read())
+                        else:
+                            Log("User rating %s already set to %s" % (userRating, stashRating))
+                    else:
+                        Log("Media has no user rating, skipping")
 
             # Set the summary
             if data['details']:

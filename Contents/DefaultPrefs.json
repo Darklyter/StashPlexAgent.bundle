@@ -150,6 +150,12 @@
         "default": false
     },
     {
+        "id": "SaveUserRatings",
+        "label": "Auto sync Stash ratings to Plex user ratings",
+        "type": "bool",
+        "default": false
+    },
+    {
         "id": "RequireOrganized",
         "label": "Require Organized flag to be set in Stash to pull metadata",
         "type": "bool",
