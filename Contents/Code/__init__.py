@@ -1,6 +1,7 @@
-import os
+import os, urllib, urllib2, json
 import dateutil.parser as dateparser
-from urllib2 import quote
+#from Helpers import *
+import copy
 
 # preferences
 preference = Prefs
@@ -13,16 +14,15 @@ else:
 def ValidatePrefs():
     pass
 
-
 def Start():
     Log("Stash metadata agent started")
     HTTP.Headers['Accept'] = 'application/json'
     HTTP.CacheTime = 0.1
     ValidatePrefs()
 
-
 def HttpReq(url, authenticate=True, retry=True):
-    Log("Requesting: %s" % url)
+    if DEBUG:
+        Log("Requesting: %s" % url)
     api_string = ''
     if Prefs['APIKey']:
         api_string = '&apikey=%s' % Prefs['APIKey']
@@ -33,7 +33,8 @@ def HttpReq(url, authenticate=True, retry=True):
         connectstring = 'http://%s:%s/graphql?query=%s%s'
     try:
         connecttoken = connectstring % (Prefs['Hostname'].strip(), Prefs['Port'].strip(), url, api_string)
-        Log(connecttoken)
+        if DEBUG:
+            Log(connecttoken)
         return JSON.ObjectFromString(
             HTTP.Request(connecttoken).content)
     except Exception as e:
@@ -41,20 +42,84 @@ def HttpReq(url, authenticate=True, retry=True):
             raise e
         return HttpReq(url, authenticate, False)
 
+# set title with stash metadata
+# TODO: add advanced mode to be able to format title with any scene metadata
+def FormattedTitle(data, fallback_title=None):
+    title = data['title']
+    title_format = Prefs['TitleFormat']
+
+    def remove_prefix(text, prefix):
+        if text.startswith(prefix):
+            return text[len(prefix):]
+        return text  # or whatever
+
+    if title is None or title == u'':
+        Log("Stash title is empty, using fallback title: %s" % fallback_title)
+        return fallback_title
+    else:
+        performer = ""
+        studio = ""
+        date = data['date']
+        title = data['title']
+        if "performer" in title_format:
+            performers = copy.copy(data['performers'])
+            Log("original performers: %s" % performers)
+            if len(performers) > 0:
+                # filter out performers with no name or performers with the tag 'PlexPluginSkipTitle'
+                for idx in range(len(performers)-1):
+                    performer = performers[idx]
+                    Log("check performer: %s" % performer['name'])
+                    if 'name' in performer and performer['name'] is None or performer['name'] == u'':
+                        performers.remove(performer)
+                    if 'tags' in performer and performer['tags'] is not None and len(performer['tags']) > 0:
+                        if Prefs["IgnoreTags"]:
+                            ignore_tags = Prefs["IgnoreTags"].split(",")
+                            ignore_tags = list(map(lambda x: x.strip(), ignore_tags))
+                        else:
+                            ignore_tags = []
+                        for tag in performer['tags']:
+                            if tag['id'] in ignore_tags:
+                                performers.remove(performer)
+                                continue
+                Log("filtered performers: %s" % performers)
+                if (len(performers) > 0 and performers[0]['name']):
+                    performer = performers[0]['name']
+                    # remove duplicate performer name from title
+                    title = remove_prefix(title, performer)
+                    title = remove_prefix(title, " - ")
+                    title = title.strip()
+        if "studio" in title_format:
+            studio = data['studio']['name']
+
+        title = title_format.format(
+            performer=performer,
+            title=title,
+            date=data['date'],
+            studio=studio
+        )
+    return title
+
+
 class StashPlexAgent(Agent.Movies):
     name = 'Stash Plex Agent'
     languages = [Locale.Language.English]
     primary_provider = True
-    accepts_from = ['com.plexapp.agents.localmedia', 'com.plexapp.agents.xbmcnfo', 'com.plexapp.agents.phoenixadult', 'com.plexapp.agents.data18-phoenix', 'com.plexapp.agents.adultdvdempire']
+    fallback_agent = False
+    contributes_to = None
+    accepts_from = ['com.plexapp.agents.xbmcnfo', 'com.plexapp.agents.phoenixadult', 'com.plexapp.agents.data18-phoenix', 'com.plexapp.agents.adultdvdempire']
 
     def search(self, results, media, lang):
         DEBUG = Prefs['debug']
-        file_query = r"""query{findScenes(scene_filter:{path:{value:"\"<FILENAME>\"",modifier:INCLUDES}}){scenes{id,title,date,studio{id,name}}}}"""
         mediaFile = media.items[0].parts[0].file
         filename = String.Unquote(mediaFile).encode('utf8', 'ignore')
-        filename = os.path.splitext(os.path.basename(filename))[0]
+        filename_clean = os.path.splitext(os.path.basename(filename))[0]
+        if (Prefs["UseFullMediaPath"]):
+            file_query = r"""query{findScenes(scene_filter:{path:{value:"<FILENAME>",modifier:EQUALS}}){scenes{id,title,date,studio{id,name}}}}"""
+        else:
+            file_query = r"""query{findScenes(scene_filter:{path:{value:"\"<FILENAME>\"",modifier:INCLUDES}}){scenes{id,title,date,studio{id,name}}}}"""
+            filename = os.path.splitext(os.path.basename(filename))[0]
         if filename:
-            filename = str(quote(filename.encode('UTF-8')))
+            filename = str(urllib2.quote(filename.encode('UTF-8')))
             query = file_query.replace("<FILENAME>", filename)
             request = HttpReq(query)
             if DEBUG:
@@ -65,8 +130,10 @@ class StashPlexAgent(Agent.Movies):
                 if scene['date']:
                     title = scene['title'] + ' - ' + scene['date']
                 else:
-                    title = scene['title']
+                    title = filename_clean
                 Log("Title Found: " + title + " Score: " + str(score) + " ID:" + scene['id'])
+                if Prefs['UseFormattedTitle']:
+                    title = FormattedTitle(scene, title)
                 results.Append(MetadataSearchResult(id = str(scene['id']), name = title, score = int(score), lang = lang))
 
 
@@ -74,7 +141,7 @@ class StashPlexAgent(Agent.Movies):
         DEBUG = Prefs['debug']
         Log("update(%s)" % metadata.id)
         mid = metadata.id
-        id_query = "query{findScene(id:%s){path,id,title,details,url,date,rating,paths{screenshot,stream}movies{movie{id,name}}studio{id,name,image_path,parent_studio{id,name,details}}organized,stash_ids{stash_id}tags{id,name}performers{name,image_path,tags{id,name}}movies{movie{name}}galleries{id,title,url,images{id,title,path,file{size,width,height}}}}}"
+        id_query = "query{findScene(id:%s){path,id,title,details,url,date,rating,rating100,paths{screenshot,stream}movies{movie{id,name}}studio{id,name,image_path,parent_studio{id,name,details}}organized,stash_ids{stash_id}tags{id,name}performers{name,image_path,tags{id,name}}movies{movie{name}}galleries{id,title,url,images{id,title,path,file{size,width,height}}}}}"
         data = HttpReq(id_query % mid)
         data = data['data']['findScene']
         metadata.collections.clear()
@@ -100,6 +167,17 @@ class StashPlexAgent(Agent.Movies):
             Log("Failed 'Organized' Check, stopping.")
             allow_scrape = False
 
+        if (Prefs["AddOrganizedCollectionTag"] and data["organized"]):
+            Log("Scene marked as organized, adding collection.")
+            if (Prefs["OrganizedCollectionTagName"]):
+                organized_string = Prefs["OrganizedCollectionTagName"]
+            else:
+                organized_string = "Organized"
+            try:
+                metadata.collections.add(organized_string)
+            except:
+                pass
+
         if allow_scrape:
             if data['date']:
                 try:
@@ -116,7 +194,10 @@ class StashPlexAgent(Agent.Movies):
 
             # Get the title
             if data['title']:
-                metadata.title = data["title"]
+                title = data["title"]
+                if Prefs['UseFormattedTitle']:
+                    title = FormattedTitle(data, title)
+                metadata.title = title
 
             # Get the Studio
             if not data["studio"] is None:
@@ -124,7 +205,8 @@ class StashPlexAgent(Agent.Movies):
 
             # Get the rating
             if not data["rating"] is None:
-                metadata.rating = float(data["rating"]) * 2
+                stashRating = float(data["rating100"] / 10)
+                metadata.rating = stashRating
                 if Prefs["CreateRatingTags"]:
                     if int(data["rating"]) > 0:
                         rating = str(int(data["rating"]))
@@ -133,6 +215,56 @@ class StashPlexAgent(Agent.Movies):
                             metadata.collections.add(ratingstring)
                         except:
                             pass
+                if Prefs["SaveUserRatings"]:
+                    # set stash rating to plex rating
+                    if not stashRating is None:
+                        Log('Set media rating to %s' % stashRating)
+                        host = "http://127.0.0.1:32400"
+                        token = os.environ['PLEXTOKEN']
+
+                        # get section details
+                        # inspired by https://github.com/suparngp/plex-personal-shows-agent.bundle/blob/master/Contents/Code/__init__.py#L31
+                        sectionQueryEncoded = urllib.urlencode({
+                            "X-Plex-Token": token
+                        })
+                        section_lookup_url = '{host}/library/metadata/{media_id}?{sectionQueryEncoded}'.format(
+                            host=host,
+                            media_id=media.id,
+                            sectionQueryEncoded=sectionQueryEncoded
+                        )
+                        if DEBUG:
+                            Log('Section lookup request: %s' % section_lookup_url)
+                        metadata = json.loads(HTTP.Request(url=section_lookup_url, immediate=True, headers={'Accept': 'application/json'}).content)
+
+                        identifier = metadata['MediaContainer']['identifier']
+                        rating_key = metadata['MediaContainer']['Metadata'][0]['ratingKey']
+                        userRating = metadata['MediaContainer']['Metadata'][0]['userRating']
+
+                        if float(userRating) != float(stashRating):
+                            rateQueryEncoded = urllib.urlencode({
+                                "key": rating_key,
+                                "identifier": identifier,
+                                "rating": stashRating,
+                                "X-Plex-Token": token
+                            })
+                            rateUrl = '{host}/:/rate?{rateQueryEncoded}'.format(
+                                host=host,
+                                rateQueryEncoded=rateQueryEncoded
+                            )
+                            if DEBUG:
+                                Log('Rate request: %s' % rateUrl)
+                            # inspired by https://github.com/pkkid/python-plexapi/blob/9b8c7d522d1ca94a0782b940c03d257d8dd071a0/plexapi/mixins.py#L317
+                            request = urllib2.Request(url=rateUrl, data=urllib.urlencode({'dummy':'dummy'}), headers={
+                                'Content-Type': 'text/html',
+                            })
+                            request.get_method = lambda: 'GET'
+                            response = urllib2.urlopen(request)
+                            if DEBUG:
+                                Log("setUserRating: response: %s" % response.read())
+                        else:
+                            Log("User rating %s already set to %s" % (userRating, stashRating))
+                    else:
+                        Log("Media has no user rating, skipping")
 
             # Set the summary
             if data['details']:
@@ -280,9 +412,14 @@ class StashPlexAgent(Agent.Movies):
                     api_string = '&apikey=%s' % Prefs['APIKey']
                 try:
                     thumb = HTTP.Request(data["paths"]["screenshot"] + api_string)
-                    metadata.posters[data["paths"]["screenshot"] + api_string] = Proxy.Preview(thumb, sort_order=0)
-                    metadata.art[data["paths"]["screenshot"] + api_string] = Proxy.Preview(thumb, sort_order=0)
+                    # TODO: see performance impact vs benefit of these two clear_ methods.
+                    #  Seems to impact IO, and probably shouldn't be needed due to Plex removing old bundles every week.
+                    #clear_posters(metadata)
+                    #clear_art(metadata)
+                    metadata.posters[data["paths"]["screenshot"] + api_string] = Proxy.Media(thumb, sort_order=0)
+                    metadata.art[data["paths"]["screenshot"] + api_string] = Proxy.Media(thumb, sort_order=0)
                 except Exception as e:
+                    Log.Exception('Exception creating posters: %s' % str(e))
                     pass
 
             if Prefs["IncludeGalleryImages"]:
@@ -309,10 +446,10 @@ class StashPlexAgent(Agent.Movies):
                                 if image_orientation == "poster" or image_orientation == "all":
                                     if DEBUG:
                                         Log("Inserting Poster image: " + image["title"] + " (" + str(image["file"]["width"]) + "x" + str(image["file"]["height"]) + " WxH)")
-                                    metadata.posters[imageurl] = Proxy.Preview(thumb)
+                                    metadata.posters[imageurl] = Proxy.Media(thumb)
                                 if image_orientation == "background" or image_orientation == "all":
                                     if DEBUG:
                                         Log("Inserting Background image: " + image["title"] + " (" + str(image["file"]["width"]) + "x" + str(image["file"]["height"]) + " WxH)")
-                                        metadata.art[imageurl] = Proxy.Preview(thumb)
+                                        metadata.art[imageurl] = Proxy.Media(thumb)
                             except Exception as e:
                                 pass
