@@ -234,11 +234,17 @@ class StashPlexAgent(Agent.Movies):
                         )
                         if DEBUG:
                             Log('Section lookup request: %s' % section_lookup_url)
-                        metadata = json.loads(HTTP.Request(url=section_lookup_url, immediate=True, headers={'Accept': 'application/json'}).content)
+                        ratings_meta = json.loads(HTTP.Request(url=section_lookup_url, immediate=True, headers={'Accept': 'application/json'}).content)
 
-                        identifier = metadata['MediaContainer']['identifier']
-                        rating_key = metadata['MediaContainer']['Metadata'][0]['ratingKey']
-                        userRating = metadata['MediaContainer']['Metadata'][0]['userRating']
+                        identifier = ratings_meta['MediaContainer']['identifier']
+                        if 'ratingKey' in ratings_meta['MediaContainer']['Metadata'][0] and ratings_meta['MediaContainer']['Metadata'][0]['ratingKey']:
+                            rating_key = ratings_meta['MediaContainer']['Metadata'][0]['ratingKey']
+                        else:
+                            rating_key = 0
+                        if 'userRating' in ratings_meta['MediaContainer']['Metadata'][0] and ratings_meta['MediaContainer']['Metadata'][0]['userRating']:
+                            userRating = ratings_meta['MediaContainer']['Metadata'][0]['userRating']
+                        else:
+                            userRating = 0
 
                         if float(userRating) != float(stashRating):
                             rateQueryEncoded = urllib.urlencode({
