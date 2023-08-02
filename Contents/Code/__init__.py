@@ -280,10 +280,13 @@ class StashPlexAgent(Agent.Movies):
             # Set series and add to collections
             if Prefs["CreateSiteCollectionTags"]:
                 if not data["studio"] is None:
-                    if Prefs["PrefixSiteCollectionTags"]:
-                        SitePrefix = Prefs["PrefixSiteCollectionTags"]
+                    if Prefs["CustomStudioCollectionPrefix"]:
+                        if Prefs["PrefixSiteCollectionTags"]:
+                            SitePrefix = Prefs["PrefixSiteCollectionTags"]
+                        else:
+                            SitePrefix = "Site: "
                     else:
-                        SitePrefix = "Site: "
+                        SitePrefix = ""
                     site = SitePrefix + data["studio"]["name"]
                     try:
                         if DEBUG:
@@ -293,10 +296,13 @@ class StashPlexAgent(Agent.Movies):
                         pass
             if Prefs["CreateStudioCollectionTags"]:
                 if not data["studio"] is None:
-                    if Prefs["PrefixStudioCollectionTags"]:
-                        StudioPrefix = Prefs["PrefixStudioCollectionTags"]
+                    if Prefs["CustomStudioCollectionPrefix"]:
+                        if Prefs["PrefixStudioCollectionTags"]:
+                            StudioPrefix = Prefs["PrefixStudioCollectionTags"]
+                        else:
+                            StudioPrefix = "Studio: "
                     else:
-                        StudioPrefix = "Studio: "
+                        StudioPrefix = ""
                     if not data["studio"]["parent_studio"] is None:
                         site = StudioPrefix + data["studio"]["parent_studio"]["name"]
                     else:

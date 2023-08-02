@@ -96,6 +96,12 @@
         "default": true
     },
     {
+        "id": "CustomSiteCollectionPrefix",
+        "label": "Use a custom prefix for site collections?  If False the box below is ignored.",
+        "type": "bool",
+        "default": true
+    },
+    {
         "id": "PrefixSiteCollectionTags",
         "label": "Prefix for Site Collection Names (The Site name will be appended to this value)",
         "type": "text",
@@ -112,6 +118,12 @@
         "label": "If Studio is not defined, use Site instead (In Stash, Studio is the parent of the scene Studio)",
         "type": "bool",
         "default": false
+    },
+    {
+        "id": "CustomStudioCollectionPrefix",
+        "label": "Use a custom prefix for studio collections?  If False the box below is ignored.",
+        "type": "bool",
+        "default": true
     },
     {
         "id": "PrefixStudioCollectionTags",
