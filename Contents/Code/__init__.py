@@ -119,7 +119,8 @@ class StashPlexAgent(Agent.Movies):
             file_query = r"""query{findScenes(scene_filter:{path:{value:"\"<FILENAME>\"",modifier:INCLUDES}}){scenes{id,title,date,studio{id,name}}}}"""
             filename = os.path.splitext(os.path.basename(filename))[0]
         if filename:
-            filename = str(urllib2.quote(filename.encode('UTF-8')))
+            filename = filename.replace('"', r'\"')
+            filename = urllib2.quote(filename.encode('UTF-8'))
             query = file_query.replace("<FILENAME>", filename)
             request = HttpReq(query)
             if DEBUG:
