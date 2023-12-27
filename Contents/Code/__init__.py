@@ -142,7 +142,7 @@ class StashPlexAgent(Agent.Movies):
         DEBUG = Prefs['debug']
         Log("update(%s)" % metadata.id)
         mid = metadata.id
-        id_query = "query{findScene(id:%s){path,id,title,details,url,date,rating,rating100,paths{screenshot,stream}movies{movie{id,name}}studio{id,name,image_path,parent_studio{id,name,details}}organized,stash_ids{stash_id}tags{id,name}performers{name,image_path,tags{id,name}}movies{movie{name}}galleries{id,title,url,images{id,title,path,file{size,width,height}}}}}"
+        id_query = "query{findScene(id:%s){id,title,details,url,date,rating100,paths{screenshot,stream}movies{movie{id,name}}studio{id,name,image_path,parent_studio{id,name,details}}organized,stash_ids{stash_id}tags{id,name}performers{name,image_path,tags{id,name}}movies{movie{name}}galleries{id,title,url}}}"
         data = HttpReq(id_query % mid)
         data = data['data']['findScene']
         metadata.collections.clear()
@@ -205,12 +205,12 @@ class StashPlexAgent(Agent.Movies):
                 metadata.studio = data["studio"]["name"]
 
             # Get the rating
-            if not data["rating"] is None:
+            if not data["rating100"] is None:
                 stashRating = float(data["rating100"] / 10)
                 metadata.rating = stashRating
                 if Prefs["CreateRatingTags"]:
-                    if int(data["rating"]) > 0:
-                        rating = str(int(data["rating"]))
+                    if int(stashRating) > 0:
+                        rating = str(int(stashRating))
                         ratingstring = "Rating: " + rating + " Stars"
                         try:
                             metadata.collections.add(ratingstring)
