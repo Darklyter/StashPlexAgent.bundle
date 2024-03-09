@@ -61,7 +61,7 @@ def FormattedTitle(data, fallback_title=None):
         studio = ""
         date = data['date']
         title = data['title']
-        if "performer" in title_format:
+        if "performer" in title_format and "performers" in data:
             performers = copy.copy(data['performers'])
             Log("original performers: %s" % performers)
             if len(performers) > 0:
@@ -114,9 +114,9 @@ class StashPlexAgent(Agent.Movies):
         filename = String.Unquote(mediaFile).encode('utf8', 'ignore')
         filename_clean = os.path.splitext(os.path.basename(filename))[0]
         if (Prefs["UseFullMediaPath"]):
-            file_query = r"""query{findScenes(scene_filter:{path:{value:"<FILENAME>",modifier:EQUALS}}){scenes{id,title,date,studio{id,name}}}}"""
+            file_query = r"""query{findScenes(scene_filter:{path:{value:"<FILENAME>",modifier:EQUALS}}){scenes{id,title,date,studio{id,name},performers{name}}}}"""
         else:
-            file_query = r"""query{findScenes(scene_filter:{path:{value:"\"<FILENAME>\"",modifier:INCLUDES}}){scenes{id,title,date,studio{id,name}}}}"""
+            file_query = r"""query{findScenes(scene_filter:{path:{value:"\"<FILENAME>\"",modifier:INCLUDES}}){scenes{id,title,date,studio{id,name},performers{name}}}}"""
             filename = os.path.splitext(os.path.basename(filename))[0]
         if filename:
             filename = filename.replace('"', r'\"')
