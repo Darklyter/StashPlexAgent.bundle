@@ -35,6 +35,12 @@
         "type": "bool",
         "default": false
     },
+	    {
+        "id": "RemovePerformerFromTitle",
+        "label": "Remove Performer Names from Stash Title",
+        "type": "bool",
+        "default": true
+    },
     {
         "id": "TitleFormat",
         "label": "Title format to use if enabled (available variables: performer, title, date, studio). Use IgnoreTags to ignore a performer from title.",

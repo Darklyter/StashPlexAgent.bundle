@@ -84,8 +84,9 @@ def FormattedTitle(data, fallback_title=None):
                 Log("filtered performers: %s" % performers)
                 if (len(performers) > 0 and performers[0]['name']):
                     performer = performers[0]['name']
-                    # remove duplicate performer name from title
-                    title = remove_prefix(title, performer)
+                    if (Prefs['RemovePerformerFromTitle']):
+                        # remove duplicate performer name from title
+                        title = remove_prefix(title, performer)
                     title = remove_prefix(title, " - ")
                     title = title.strip()
         if "studio" in title_format:
