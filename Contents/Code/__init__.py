@@ -2,6 +2,7 @@ import os, urllib, urllib2, json
 import dateutil.parser as dateparser
 #from Helpers import *
 import copy
+import re
 
 # preferences
 preference = Prefs
@@ -278,6 +279,9 @@ class StashPlexAgent(Agent.Movies):
             if data['details']:
                 summary = data["details"].replace("\n", " ").replace("\r", "").replace("\t", "")
                 metadata.summary = summary
+              
+                # Remove non-printable characters
+                summary = re.sub(r"[\x00-\x1F\x7F-\x9F]", "", summary)              
 
             # Set series and add to collections
             if Prefs["CreateSiteCollectionTags"]:
