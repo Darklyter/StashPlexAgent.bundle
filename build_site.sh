@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# builds a repository of scrapers
+# builds a repository of plugins
 # outputs to _site with the following structure:
 # index.yml
 # <scraper_id>.zip
@@ -69,8 +69,5 @@ buildPlugin()
 }
 
 find ./plugins -mindepth 1 -name *.yml | sort | while read file; do
-    buildPlugin "$file"
-done
-find ./themes -mindepth 1 -name *.yml | sort | while read file; do
     buildPlugin "$file"
 done

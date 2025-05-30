@@ -22,20 +22,20 @@ def processScene(scene):
         for stashbox in scene["stash_ids"]: # Add all the stashbox ID tags
             url = stashbox['endpoint']
             if (url == "https://stashdb.org/graphql"):
-                tags.append(settings["tagID_stashdb"])
+                tags.append(int(settings["tagID_stashdb"]))
 
             if (url == "https://pmvstash.org/graphql"):
-                tags.append(settings["tagID_pmvstash"])
+                tags.append(int(settings["tagID_pmvstash"]))
 
             if (url == "https://theporndb.net/graphql"):
-                tags.append(settings["tagID_porndb"])
+                tags.append(int(settings["tagID_porndb"]))
 
             if (url == "https://fansdb.cc/graphql"):
-                tags.append(settings["tagID_fansdb"])
-            
+                tags.append(int(settings["tagID_fansdb"]))
+
             if (url == "https://javstash.org/graphql"):
-                tags.append(settings["tagID_javstash"])
-        
+                tags.append(int(settings["tagID_javstash"]))
+
         if (len(tags) != 0):
             for x in scene['tags']:
                 if (int(x['id']) in tags):
@@ -95,12 +95,12 @@ settings = {
     "tagStashIDs": False,
     "skipUnorganized": True,
     "cleanTitles": True,
-    "tagID_emptystashid": 3737,
-    "tagID_stashdb": 3383,
-    "tagID_pmvstash": 3461,
-    "tagID_porndb": 3278,
-    "tagID_fansdb": 3462,
-    "tagID_javstash": 3922
+    "tagID_emptystashid": "1",
+    "tagID_stashdb": "2",
+    "tagID_pmvstash": "3",
+    "tagID_porndb": "4",
+    "tagID_fansdb": "5",
+    "tagID_javstash": "6"
 }
 if "PlexSync" in config["plugins"]:
     settings.update(config["plugins"]["PlexSync"])
@@ -117,11 +117,11 @@ if "hookContext" in json_input["args"]:
         stashbox_tags = []
         stashbox_tags.append(frozenset(
             {
-                settings["tagID_stashdb"],
-                settings["tagID_pmvstash"],
-                settings["tagID_porndb"],
-                settings["tagID_fansdb"],
-                settings["tagID_javstash"]
+                int(settings["tagID_stashdb"]),
+                int(settings["tagID_pmvstash"]),
+                int(settings["tagID_porndb"]),
+                int(settings["tagID_fansdb"]),
+                int(settings["tagID_javstash"])
             }))
 
         if "tag_ids" in json_input["args"]["hookContext"]["inputFields"]:
