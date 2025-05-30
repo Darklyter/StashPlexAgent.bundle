@@ -33,3 +33,8 @@ Now, you should see scenes being updated in Stash, adding this URL to the scenes
 # Usage
 
 Update your scenes in Stash like normal, and these scenes will be automatically refreshed in Plex. 🎉
+
+# Warnings
+- Titles will be processed with `unidecode` if you enable the "clean titles" setting.  This means that all non-ASCII characters in your titles will be converted; Cyrillic script for example will be taken away.
+
+- The plugin connects to your Plex via TLS, but it ignores cert errors.  But this is not really a problem, as your Stash is most likely on the same host as your Plex...
