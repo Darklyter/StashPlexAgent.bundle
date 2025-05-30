@@ -192,6 +192,12 @@
         "default": false
     },
     {
+        "id": "AddPlexURL",
+        "label": "Adds the Plex media ID to the scene in Stash; allows Stash to update Plex metadata.",
+        "type": "bool",
+        "default": false
+    },
+    {
         "id": "debug",
         "label": "Use debug logging",
         "type": "bool",

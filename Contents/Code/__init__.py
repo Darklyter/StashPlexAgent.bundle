@@ -1,6 +1,5 @@
 import os, urllib, urllib2, json
 import dateutil.parser as dateparser
-#from Helpers import *
 import copy
 import re
 
@@ -43,8 +42,40 @@ def HttpReq(url, authenticate=True, retry=True):
             raise e
         return HttpReq(url, authenticate, False)
 
+def HttpPost(url, authenticate=True, retry=True):
+    if DEBUG:
+        Log("Using GraphQL: %s" % url)
+    api_string = ''
+    if Prefs['APIKey']:
+        api_string = '?apikey=%s' % Prefs['APIKey']
+
+    graphql_headers = {
+        "Accept-Encoding": "gzip, deflate, br",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Connection": "keep-alive",
+        "DNT": "1"
+    }
+
+    if Prefs['UseHTTPS']:
+        connectstring = 'https://%s:%s/graphql%s'
+    else:
+        connectstring = 'http://%s:%s/graphql%s'
+    try:
+        connecttoken = connectstring % (Prefs['Hostname'].strip(), Prefs['Port'].strip(), api_string)
+        if DEBUG:
+            Log(connecttoken)
+            Log(url)
+        return JSON.ObjectFromString(
+            HTTP.Request(connecttoken, data=url, headers=graphql_headers,method='POST').content)
+    except Exception as e:
+        if not retry:
+            raise e
+        return HttpPost(url, authenticate, False)
+
 # set title with stash metadata
 # TODO: add advanced mode to be able to format title with any scene metadata
+# Note: why not do these changes directly in Stash...? Why have different title in Plex?
 def FormattedTitle(data, fallback_title=None):
     title = data['title']
     title_format = Prefs['TitleFormat']
@@ -108,9 +139,10 @@ class StashPlexAgent(Agent.Movies):
     primary_provider = True
     fallback_agent = False
     contributes_to = None
+    persist_stored_files = False
     accepts_from = ['com.plexapp.agents.xbmcnfo', 'com.plexapp.agents.phoenixadult', 'com.plexapp.agents.data18-phoenix', 'com.plexapp.agents.adultdvdempire']
 
-    def search(self, results, media, lang):
+    def search(self, results, media, lang = Locale.Language.English):
         DEBUG = Prefs['debug']
         mediaFile = media.items[0].parts[0].file
         filename = String.Unquote(mediaFile).encode('utf8', 'ignore')
@@ -140,11 +172,11 @@ class StashPlexAgent(Agent.Movies):
                 results.Append(MetadataSearchResult(id = str(scene['id']), name = title, score = int(score), lang = lang))
 
 
-    def update(self, metadata, media, lang, force=False):
+    def update(self, metadata, media, lang = Locale.Language.English, force=False):
         DEBUG = Prefs['debug']
         Log("update(%s)" % metadata.id)
         mid = metadata.id
-        id_query = "query{findScene(id:%s){id,title,details,url,date,rating100,paths{screenshot,stream}movies{movie{id,name}}studio{id,name,image_path,parent_studio{id,name,details}}organized,stash_ids{stash_id}tags{id,name}performers{name,image_path,tags{id,name}}movies{movie{name}}galleries{id,title,url}}}"
+        id_query = "query{findScene(id:%s){id,title,details,urls,date,rating100,paths{screenshot,stream}movies{movie{id,name}}studio{id,name,image_path,parent_studio{id,name,details}}organized,stash_ids{stash_id,endpoint}tags{id,name}performers{name,image_path,tags{id,name}}movies{movie{name}}galleries{id,title,url}}}"
         data = HttpReq(id_query % mid)
         data = data['data']['findScene']
         metadata.collections.clear()
@@ -153,7 +185,7 @@ class StashPlexAgent(Agent.Movies):
         if (Prefs["RequireOrganized"] and data["organized"]) or not Prefs["RequireOrganized"]:
             if DEBUG and Prefs["RequireOrganized"]:
                 Log("Passed 'Organized' Check, continuing...")
-            if (Prefs["RequireURL"] and data["url"]) or not Prefs["RequireURL"]:
+            if (Prefs["RequireURL"] and len(data["urls"])) or not Prefs["RequireURL"]:
                 if DEBUG and Prefs["RequireURL"]:
                     Log("Passed 'RequireURL' Check, continuing...")
                 if (Prefs["RequireStashID"] and len(data["stash_ids"])) or not Prefs["RequireStashID"]:
@@ -180,6 +212,12 @@ class StashPlexAgent(Agent.Movies):
                 metadata.collections.add(organized_string)
             except:
                 pass
+
+        if not (data): # This happens when StashID has been changed, but the existing scene in Plex is connected to the old stash ID.
+            Log("No results on this stash ID!")
+            allow_scrape = False
+            metadata.title = "ZZZFIXME " + str(metadata.title) # Set this weird title, so easier for you to manually re-match the scene in Plex.
+            pass
 
         if allow_scrape:
             if data['date']:
@@ -366,6 +404,8 @@ class StashPlexAgent(Agent.Movies):
                 collection_tags = list(map(lambda x: x.strip(), collection_tags))
             else:
                 collection_tags = []
+            metadata.content_rating = "XXX" # Set Plex content rating; we assume everything from Stash is XXX...
+
             try:
                 if data["tags"]:
                     genres = data["tags"]
@@ -420,6 +460,7 @@ class StashPlexAgent(Agent.Movies):
                         role = metadata.roles.new()
                         role.name = model["name"]
                         role.photo = model["image_path"] + api_string
+                        # role.role = "" # We can set a role for the performers, but pretty useless in most cases
             except:
                 pass
 
@@ -435,7 +476,9 @@ class StashPlexAgent(Agent.Movies):
                     #clear_posters(metadata)
                     #clear_art(metadata)
                     metadata.posters[data["paths"]["screenshot"] + api_string] = Proxy.Media(thumb, sort_order=0)
-                    metadata.art[data["paths"]["screenshot"] + api_string] = Proxy.Media(thumb, sort_order=0)
+                    
+                    # I comment out "art", as it looks much better when it's loaded via the files in Plex, especially on TV-mode. Otherwise you simply have a duplicate cover as background, not very useful. 
+                    #metadata.art[data["paths"]["screenshot"] + api_string] = Proxy.Media(thumb, sort_order=0)
                 except Exception as e:
                     Log.Exception('Exception creating posters: %s' % str(e))
                     pass
@@ -471,3 +514,15 @@ class StashPlexAgent(Agent.Movies):
                                         metadata.art[imageurl] = Proxy.Media(thumb)
                             except Exception as e:
                                 pass
+
+            if Prefs["AddPlexURL"]:
+                addurl = "plex/library/metadata/%s" % media.id
+                if addurl not in data["urls"]:
+                    Log("Adding Plex ID to Stash")
+                    stashQL = """{"query":"mutation UpdateSceneURLs($input: BulkSceneUpdateInput!){ bulkSceneUpdate(input: $input) { id, urls } }","variables":{"input":{"ids":%s,"urls":{"values":"%s","mode":"ADD"}}},"operationName":"UpdateSceneURLs"}""" % (metadata.id, addurl)
+                    data = HttpPost(stashQL)
+                else:
+                    if DEBUG:
+                        Log("Plex URL already exists on Stash")
+                    pass
+

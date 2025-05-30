@@ -16,3 +16,6 @@ For installing just download the bundle and put it into your "\PlexMediaServer\P
 I guarantee there will be problems.  When they pop up feel free to get with me on either the TPDB or Stash Discord channels.
 
 Also this agent only handles scenes currently.  I haven't played with movies in Stash yet, but can take a look if there is interest.  Currently the Plex ADE agent handles that for me.
+
+# StashPlugin
+A plugin for Stash, that refreshes Plex metadata for changed scenes, so you don't need to "refresh all metadata" any time you change something in a scene.  See StashPlugin directory for more readme.
