@@ -1,0 +1,8 @@
+- id: PlexSync
+  name: Plex Sync
+  metadata:
+    description: Refresh Plex metadata when scene updated in Stash.
+  version: 0.1-e0be5de
+  date: 2025-05-30 21:25:18
+  path: PlexSync.zip
+  sha256: bf131ccddbc80946063f52da138c270135570d6d552699cc75746f705d47cc77
