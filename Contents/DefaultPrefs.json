@@ -43,7 +43,7 @@
     },
     {
         "id": "TitleFormat",
-        "label": "Title format to use if enabled (available variables: performer, title, date, studio). Use IgnoreTags to ignore a performer from title.",
+        "label": "Title format to use if enabled (available variables: performer, title, date, studio, filename). Use IgnoreTags to ignore a performer from title.",
         "type": "text",
         "default": "{performer} - {title}"
     },

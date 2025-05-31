@@ -1,7 +1,6 @@
 import os, urllib, urllib2, json
 import dateutil.parser as dateparser
 import copy
-import re
 
 # preferences
 preference = Prefs
@@ -123,12 +122,16 @@ def FormattedTitle(data, fallback_title=None):
                     title = title.strip()
         if "studio" in title_format:
             studio = data['studio']['name']
+        
+        if "filename" in title_format:
+            clean_filename = os.path.splitext(os.path.basename(data["files"][0]["path"]))[0]
 
         title = title_format.format(
             performer=performer,
             title=title,
             date=data['date'],
-            studio=studio
+            studio=studio,
+            filename=clean_filename
         )
     return title
 
@@ -176,7 +179,7 @@ class StashPlexAgent(Agent.Movies):
         DEBUG = Prefs['debug']
         Log("update(%s)" % metadata.id)
         mid = metadata.id
-        id_query = "query{findScene(id:%s){id,title,details,urls,date,rating100,paths{screenshot,stream}movies{movie{id,name}}studio{id,name,image_path,parent_studio{id,name,details}}organized,stash_ids{stash_id,endpoint}tags{id,name}performers{name,image_path,tags{id,name}}movies{movie{name}}galleries{id,title,url}}}"
+        id_query = "query{findScene(id:%s){id,title,details,urls,date,files{path},rating100,paths{screenshot,stream}movies{movie{id,name}}studio{id,name,image_path,parent_studio{id,name,details}}organized,stash_ids{stash_id,endpoint}tags{id,name}performers{name,image_path,tags{id,name}}movies{movie{name}}galleries{id,title,url}}}"
         data = HttpReq(id_query % mid)
         data = data['data']['findScene']
         metadata.collections.clear()
@@ -317,9 +320,6 @@ class StashPlexAgent(Agent.Movies):
             if data['details']:
                 summary = data["details"].replace("\n", " ").replace("\r", "").replace("\t", "")
                 metadata.summary = summary
-              
-                # Remove non-printable characters
-                summary = re.sub(r"[\x00-\x1F\x7F-\x9F]", "", summary)              
 
             # Set series and add to collections
             if Prefs["CreateSiteCollectionTags"]:
