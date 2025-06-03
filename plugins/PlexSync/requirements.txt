@@ -1,3 +1,0 @@
-stashapp-tools
-unidecode
-requests
