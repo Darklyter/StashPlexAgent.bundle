@@ -17,5 +17,7 @@ I guarantee there will be problems.  When they pop up feel free to get with me o
 
 Also this agent only handles scenes currently.  I haven't played with movies in Stash yet, but can take a look if there is interest.  Currently the Plex ADE agent handles that for me.
 
-# StashPlugin
-A plugin for Stash, that refreshes Plex metadata for changed scenes, so you don't need to "refresh all metadata" any time you change something in a scene.  See StashPlugin directory for more readme.
+## Optional PlexSync Plugin
+To further improve your Stash+Plex experience, you can install the optional "PlexSync" plugin in Stash.  This plugin automatically refreshes Plex's metadata for any scenes that are updated in Stash, so you don't ever need to run the resource-intensive "refresh all metadata" task in Plex.
+
+See the [CommunityScripts/PlexSync](https://github.com/stashapp/CommunityScripts/blob/main/plugins/PlexSync/README.md) readme for the optional plugin's installation instructions.
