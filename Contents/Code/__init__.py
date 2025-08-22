@@ -122,17 +122,24 @@ def FormattedTitle(data, fallback_title=None):
                     title = title.strip()
         if "studio" in title_format:
             studio = data['studio']['name']
-        
+
         if "filename" in title_format:
             clean_filename = os.path.splitext(os.path.basename(data["files"][0]["path"]))[0]
+            title = title_format.format(
+                performer=performer,
+                title=title,
+                date=data['date'],
+                studio=studio,
+                filename=clean_filename
+            )
+        else:
+            title = title_format.format(
+                performer=performer,
+                title=title,
+                date=data['date'],
+                studio=studio
+            )
 
-        title = title_format.format(
-            performer=performer,
-            title=title,
-            date=data['date'],
-            studio=studio,
-            filename=clean_filename
-        )
     return title
 
 
@@ -476,8 +483,8 @@ class StashPlexAgent(Agent.Movies):
                     #clear_posters(metadata)
                     #clear_art(metadata)
                     metadata.posters[data["paths"]["screenshot"] + api_string] = Proxy.Media(thumb, sort_order=0)
-                    
-                    # I comment out "art", as it looks much better when it's loaded via the files in Plex, especially on TV-mode. Otherwise you simply have a duplicate cover as background, not very useful. 
+
+                    # I comment out "art", as it looks much better when it's loaded via the files in Plex, especially on TV-mode. Otherwise you simply have a duplicate cover as background, not very useful.
                     #metadata.art[data["paths"]["screenshot"] + api_string] = Proxy.Media(thumb, sort_order=0)
                 except Exception as e:
                     Log.Exception('Exception creating posters: %s' % str(e))
